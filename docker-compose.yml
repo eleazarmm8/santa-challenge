@@ -1,0 +1,56 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb_santa
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${NOSQL_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${NOSQL_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - santanet
+  mongo-express:
+    image: mongo-express
+    container_name: mongodb_ui_santa
+    depends_on:
+      mongodb:
+        condition: service_started
+    restart: always
+    ports:
+      - "8081:8081"
+    networks:
+      - santanet
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${NOSQL_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${NOSQL_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${NOSQL_USER}:${NOSQL_PASSWORD}@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_UI_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_UI_PASSWORD}
+  app:
+    container_name: santa-challenge
+    build: .
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      NOSQL_ADDRESS: mongodb:27017
+      NOSQL_USER: ${NOSQL_USER}
+      NOSQL_PASSWORD: ${NOSQL_PASSWORD}
+    depends_on:
+      mongodb:
+        condition: service_started
+    networks:
+      - santanet
+    profiles: [ "full" ]
+
+volumes:
+  mongo_data:
+
+networks:
+  santanet:
+    driver: bridge

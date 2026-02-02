@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: Santa WebFlux Reactive Challenge
+  config:
+    import: "optional:file:.env[.properties]"
+  data:
+    mongodb:
+      uri: mongodb://${NOSQL_USER}:${NOSQL_PASSWORD}@${NOSQL_ADDRESS}/santa-reactive?authSource=admin
+  webflux:
+    base-path: /api
+    multipart:
+      max-in-memory-size: 256KB
+      max-disk-usage-per-part: 2MB
+      max-parts: 5
+aws:
+  region: ${AWS_REGION_ID}
+  access-key: ${AWS_ACCESS_KEY_ID}
+  secret-key: ${AWS_SECRET_KEY_ID}
+  sqs:
+    queue-url: ${SQS_QUEUE_URL}

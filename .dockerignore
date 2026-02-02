@@ -1,0 +1,17 @@
+.env
+**/*.env
+
+# Unnecessary Git files
+.git
+.gitignore
+
+# Compilated files that will be generated inside anyways
+target
+mvnw
+mvnw.cmd
+.mvn
+
+# IDE files
+.idea
+.vscode
+*.iml
