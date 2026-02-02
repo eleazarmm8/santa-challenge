@@ -22,9 +22,16 @@ flujo de trabajo:
 Cada una de estas dependencias, solo como referencia, tienen asociados links para que puedan descargar/revisar de manera
 independiente
 
-## Variables de entorno
+------
 
-Antes de construir la aplicación, debe proporcionar algunas variables de entorno.
+## Instrucciones
+
+Estos son los pasos a seguir/pre-requisitos para probar el sistema
+
+### Variables de entorno
+
+Antes de construir la aplicación, debe proporcionar
+algunas [variables de entorno](https://es.wikipedia.org/wiki/Variable_de_entorno).
 
 También las puede disponer de forma simplificada mediante un archivo `.env` donde almacenar todas las variables que ya
 utiliza por defecto el `application.yaml` de Spring.
@@ -45,34 +52,37 @@ SQS_QUEUE_URL={QUEUE_URL}
 
 El archivo debe estar en la ruta base del proyecto y solo debe llamarse `.env` sin más.
 
-## Construyendo la aplicación
+### Levantar la aplicación
 
 Hay tres formas distintas de hacerlo, dependiendo de las limitaciones del sistema o qué tanto se quiera jugar con
 levantar la aplicación de forma local.
 Yendo en orden de más simple a más compleja:
 
-### Docker Full (Recomendado)
+#### 1) Docker Full (Recomendado)
 
 Si su sistema cuenta con Docker Desktop instalado o tiene la posibilidad de instalarlo, se sugiere ir por esta opción.
 
 1. Descargue la última versión de Docker Desktop para su sistema operativo.[^](#stack-tecnológico)
 2. Abra una nueva terminal y diríjase a la ruta base de este proyecto (ej: `C:\dev\santa-challenge`)
 3. Escriba en la consola `docker compose --profile full up -d` y espere a que el proceso termine automáticamente
+    - Sí quiere probar hacerlo funcionar como multiples instancias, agregue el parametro `--scale` para app. ej:
+      `docker compose --profile full up --build --scale app=3 -d`
 4. Acceda normalmente al sistema a través de `http://localhost:8080`
 
-### Docker sin App
+#### 2) Docker sin App
 
 Si tiene ganas de debuggear la aplicación, o por algún motivo quiere hacer otro tipo de pruebas, es totalmente posible y
 el `docker-compose.yml` ya está habilitado para eso.
 
-1. Siga los pasos de [arriba](#docker-full-recomendado) hasta llegar al paso 3.
+1. Siga los pasos de [arriba](#docker-full-recomendado) hasta llegar al paso 2.
+2. Escriba en la consola `docker compose up -d` y aguarde a que termine la inicialización.
 2. Si aún no lo tiene, instale la versión de Java 11 para su sistema operativo. Instale ambos el JDK y JRE.
 3. Con su versión de Maven instalada o con el wrapper proporcionado, inicie el sistema:
     1. `mvn install; mvn spring-boot:run`
     2. `.\mvnw.cmd install; .\mvnw.cmd spring-boot:run`
 4. Acceda normalmente al sistema a través de `http://localhost:8080`
 
-### Totalmente desde cero (Evitar de ser posible)
+#### 3) Totalmente desde cero (Evitar de ser posible)
 
 Si no tiene más remedio, en este caso cada sistema es particular y podría ser propenso a errores, pero le deseo buena
 suerte:
@@ -89,14 +99,21 @@ Recuerde: [arriba](#stack-tecnológico) están todos los links para ver todas la
     2. `.\mvnw.cmd install; .\mvnw.cmd spring-boot:run`
 6. Acceda normalmente al sistema a través de `http://localhost:8080`
 
-## Mongo Express (Docker)
+-----
+
+## Extras
+
+### Mongo Express (Docker)
 
 Si optó por la ruta Docker completa o parcial, en ambos casos tiene a su disposición un simple DB Manager en el
-navegador para ver las interacciones en la base de datos y la formación de los objetos.
+navegador para ver las interacciones en la base de datos y la formación de los objetos. El user y password está definido
+en las variables de entorno (o .env)
 
 - ruta: [localhost:8081](http://localhost:8081)
 - user: admin
 - pass: admin123
+
+-----
 
 ## ¿Cómo usar la aplicación?
 
@@ -245,17 +262,17 @@ arriba.
 - **Para Docker full:** Escriba en la consola `docker compose --profile full down`
 - **Para Docker parcial:** Escriba en la consola `docker compose down`
 - **Ruta manual:** Diríjase a la consola de comandos donde está corriendo el sistema y simplemente corte el proceso
-  `Ctrl + C`
+  `Ctrl + C`. Cierre además la tarea de MongoDB.
 
 -----
 
-# Decisiones técnicas
+## Decisiones técnicas
 
 En este apartado, hablamos más de las decisiones técnicas y explicamos mejor el funcionamiento de ciertas rutinas o
 procesos del sistema. También se va a hablar de cómo el sistema resuelve las incógnitas presentadas en las
 instrucciones.
 
-## 1. Arquitectura
+### 1) Arquitectura
 
 Se optó por una arquitectura MVC, hay arquitecturas más robustas (Clean Code, Hexagonal) y mejor pensadas para un
 ecosistema de microservicios, pero MVC sigue siendo posible que funcione en arquitectura de microservicios y es más
@@ -264,44 +281,38 @@ simple de mantener para sistemas de baja complejidad como este.
 Clean Code y Hexagonal agregan mucho boiler-plate por muy poco beneficio para la base de código reducida que estamos
 manejando.
 
-## 2. Docker desde el inicio
+### 2) Docker desde el inicio
 
 Decidí manejar todo en contenedores que es mucho más fácil de levantar en cualquier ambiente con configuración
-mínima, reduciendo la fricción de levantar el sistema en otros sistemas.
+mínima, reduciendo la fricción de levantar el sistema en otros equipos.
 
 Como plus, suma al requisito de _"Imagina que tu aplicación está desplegada en Kubernetes y ejecutándose en
-múltiples pods simultáneamente"_, adelantando un paso importante de la cadena de despliegue de contenedores
-(Dockerización de la aplicación).
+múltiples pods simultáneamente"_, actuando como herramienta de testeo para el caso de sistemas distribuidos y multiples
+instancias del servicio, balanceador de carga y fuentes compartidas de datos.
 
-## 3. Archivo de entorno sobre Variables de entorno
+### 3) Archivo de entorno sobre Variables de entorno
 
 Los archivos `.env` son mucho más fáciles de modificar, ajustar o incluso expandir, lo cual lo hace una herramienta
 invaluable sobre todo en ambientes de desarrollo locales que son mucho más dinámicos. Por supuesto no son tan
 recomendables para sistemas distribuidos/on-premise, pero una cosa no quita la otra, siempre se puede usar las variables
 de entorno si se desea, incluso ambas soluciones a la vez.
 
-## 4. Escalabilidad
+### 4) Escalabilidad
 
 Se pueden tener múltiples instancias de esta aplicación, y siempre y cuando haya un balanceador de cargas en medio,
 funcionaría de forma desacoplada y directa.
 
 1. La configuración puede ser compartida, AWS no limita el uso de las ACCESS/SECRET keys a una sola instancia
-2. Cada instancia guarda su propio estado separado independiente del resto, evitando bloquear a los demás en sus tareas.
-3. Ninguna función bloquea el funcionamiento general de subida de archivos y generación de eventos.
+2. Cada instancia accede a la misma fuente de datos No-relacional. Esto asegura que no exista situaciones de carrera
+   ni interbloqueo
+3. Ninguna función bloquea el funcionamiento general de subida de archivos y generación de eventos. El bloqueo no es de
+   base de datos completa, sino por entrada/elemento.
 
-> **Limitación conocida**:
+> **Nota:**
 >
-> Al cada instancia ser desacoplada e independiente, se pueden dar situaciones de carrera que no son bloqueantes
-> para el sistema ni afectan a la idempotencia de los eventos, pero sí afectan al mecanismo de versionado pesimista
-> que se utiliza, ya que el desacople no permite saber a las otras instancias en que archivo se está trabajando
-> actualmente. Esto podría ocasionar situaciones donde clientes conectados a instancias distintas pero trabajando
-> sobre un mismo archivo, puedan llegar a empujar cambios al mismo archivo en simultáneo. Esto es porque la fuente de
-> verdad para ambos es su propio MongoDB, el documento KeyStore.
->
-> Como solución se podría pensar en algo central, de rápido acceso y desacoplado de todo el sistema: **Redis**
->
-> Mediantes Redis, se podría cachear este Lock pesimista de manera global (todas las instancias leen el mismo caché)
-> y de esta forma asegurar que todos sepan que alguna instancia reservó ese archivo para operar.
+> En el caso de que la aplicación escalase a una cantidad muy masiva de pods, es posible que tener un único MongoDB sea
+> un cuello de botella a largo plazo. En ese caso, se podría pensar en un Redis con Persistencia de datos, o agregar
+> Sharding a MongoDB para reducir el impacto de multiples usuarios, operando sobre la base de datos.
 
 ## 5. Idempotencia
 
@@ -334,17 +345,20 @@ veces, pero solo la primera disparará un evento (el eventId será idéntico par
 En caso de que el sistema entre en un estado inestable, se detenga inesperadamente, falle o se pierda conexión con el
 usuario, cada subida de archivo tiene un "HeartBeat" de corta duración. Cada 15 segundos mientras la operación esté en
 curso, el sistema envía un KeepAlive de la conexión, renovando el lock del recurso solicitado. De esta forma incluso si
-ocurre un error irrecuperable, al cabo de 30 segundos el lock expira y otro usuario puede readquirir el lock.
+ocurre un error irrecuperable, al cabo de 30 segundos el lock expira y otro usuario en cualquier instancia,
+puede readquirir el lock.
 
 -----
 
 # Últimas palabras
+
 Espero que la documentación sea lo suficientemente expeditiva. Intenté tanto lo más que pude de explicar a fondo muchas
 decisiones, organizar las ideas y establecer un pseudo-producto firme y robusto. Puede que olvidara mencionar cosas, o
 haya omitido ciertas cosas que no consideré importantes, pero también hay comentarios en el código para ayudar a
 reforzar la explicación del flujo.
 
 Ante cualquier duda, no duden en contactarme, dejo a disposición mis datos:
+
 - Teléfono: [11 6453-6395](https://wa.me/+5491164536395)
 - Email: [eleazarmm8@gmail.com](mailto:eleazarmm8@gmail.com)
 - LinkedIn: [emolinar](https://www.linkedin.com/in/emolinar/)
